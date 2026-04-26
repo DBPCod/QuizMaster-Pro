@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using QuizBackend.Common;
 using QuizBackend.Data;
 using QuizBackend.DTOs.Requests;
 using QuizBackend.DTOs.Responses;
@@ -17,26 +19,97 @@ public class AuthService : IAuthService
         _context = context;
     }
 
-    public async Task<AccountLoginResponse> LoginAsync(AccountLoginRequest request)
+    public async Task<ApiResponse<AccountLoginResponse>> LoginAsync(AccountLoginRequest request)
     {
         var user = await _context.Accounts.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (user == null || user.PasswordHash != request.Password)
+        if (user == null || !(BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)))
         {
-            return null;
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Email hoac mat khau khong chinh xac",
+            };
         }
 
         if (!user.IsActive)
         {
-            return null;
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Tai khoan da bi khoa",
+            };
         }
 
-        return new AccountLoginResponse
+        return new ApiResponse<AccountLoginResponse>
         {
-            AccountId = user.AccountId,
-            Email = user.Email,
-            Role = user.Role.ToString(),
-            IsActive = user.IsActive,
-            CreatedAt = user.CreatedAt.ToString(),
+            Success = true,
+            Message = "Dang nhap thanh cong",
+            Data = new AccountLoginResponse
+            {
+                AccountId = user.AccountId,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt.ToString(),
+            },
+        };
+    }
+
+    public async Task<ApiResponse<AccountLoginResponse>> RegisterAsync(
+        AccountRegisterRequest request
+    )
+    {
+        if (!new EmailAddressAttribute().IsValid(request.Email))
+        {
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Email khong hop le",
+                Data = null,
+            };
+        }
+
+        if (request.Password.Length < 6)
+        {
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Mat khau phai >= 6 ky tu",
+                Data = null,
+            };
+        }
+
+        var account = await _context.Accounts.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (account != null)
+        {
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Email da ton tai",
+                Data = null,
+            };
+        }
+        // Hashes the plaintext password from the request
+
+        string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        var user = new Account { Email = request.Email, PasswordHash = passwordHash };
+
+        _context.Accounts.Add(user);
+        await _context.SaveChangesAsync();
+
+        return new ApiResponse<AccountLoginResponse>
+        {
+            Success = true,
+            Message = "Dang ky thanh cong",
+            Data = new AccountLoginResponse
+            {
+                AccountId = user.AccountId,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt.ToString(),
+            },
         };
     }
 
