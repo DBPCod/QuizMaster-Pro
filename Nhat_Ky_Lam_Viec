@@ -1,4 +1,5 @@
 20/04/2026: Cập nhật nội dung tổng quan về ứng dụng và đặc tả yêu cầu trên docs.
 21/04/2026: Cập nhật thêm use case 3 chức năng đăng nhập, đăng ký và đổi mật khẩu trên docs.
 23/04/2026: cập nhật thêm erd chức năng đăng nhập, đăng ký và đổi mật khẩu và tạo kiến trúc API cho 3 chức năng đăng nhập, đăng ký và đổi mật khẩu.
-25/04/2026: cập nhật thêm api login, triển khai database trên TiDB và navicat.
+25/04/2026: cập nhật thêm api login, triển khai database trên TiDB và navicat. 
+26/04/2026: Cập nhật thêm api register và sửa lại đối tượng trả về trong chức năng login
