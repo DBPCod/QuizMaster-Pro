@@ -1,7 +1,9 @@
 using System.Text;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using QuizBackend.Data;
 using QuizBackend.Services.Interfaces;
 
@@ -10,7 +12,38 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http, // Thay ApiKey bằng Http
+            Scheme = "bearer", // Thêm dòng này (viết thường)
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Chỉ cần dán Token vào đây (không cần gõ Bearer)",
+        }
+    );
+
+    c.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer",
+                    },
+                },
+                new string[] { }
+            },
+        }
+    );
+});
 builder.Services.AddControllers();
 
 //load file .env
@@ -25,7 +58,6 @@ if (string.IsNullOrEmpty(secretKey))
 }
 
 var key = Encoding.ASCII.GetBytes(secretKey);
-
 builder
     .Services.AddAuthentication(options =>
     {
@@ -34,19 +66,15 @@ builder
     })
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false; // Set true nếu chạy production
-        options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false, // Set true và cấu hình nếu cần kiểm tra nguồn phát hành
-            ValidateAudience = false, // Set true và cấu hình nếu cần kiểm tra đối tượng sử dụng
-            ClockSkew = TimeSpan.Zero, // Loại bỏ thời gian trễ mặc định (thường là 5p)
+            ValidateIssuer = false, // Chỉnh thành true nếu bạn có quy định Issuer
+            ValidateAudience = false, // Chỉnh thành true nếu bạn có quy định Audience
+            ClockSkew = TimeSpan.Zero,
         };
     });
-
-builder.Services.AddAuthorization();
 
 //Lấy connection string từ file JSON
 var connectionString = builder.Configuration.GetConnectionString("TiDBConnection");
@@ -66,11 +94,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseAuthentication();
+app.UseHttpsRedirection();
+app.UseAuthentication(); // Giải mã token, xác định User là ai
 app.UseAuthorization();
 app.MapControllers();
-app.UseHttpsRedirection();
-
 var summaries = new[]
 {
     "Freezing",

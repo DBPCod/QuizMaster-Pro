@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public class AuthService : IAuthService
             {
                 Success = false,
                 Message = "Email hoac mat khau khong chinh xac",
+                StatusCode = (int)HttpStatusCode.BadRequest,
             };
         }
 
@@ -37,6 +39,7 @@ public class AuthService : IAuthService
             {
                 Success = false,
                 Message = "Tai khoan da bi khoa",
+                StatusCode = (int)HttpStatusCode.Forbidden,
             };
         }
 
@@ -44,6 +47,7 @@ public class AuthService : IAuthService
         {
             Success = true,
             Message = "Dang nhap thanh cong",
+            StatusCode = (int)HttpStatusCode.OK,
             Data = new AccountLoginResponse
             {
                 AccountId = user.AccountId,
@@ -65,6 +69,7 @@ public class AuthService : IAuthService
             {
                 Success = false,
                 Message = "Email khong hop le",
+                StatusCode = (int)HttpStatusCode.BadRequest,
                 Data = null,
             };
         }
@@ -75,6 +80,7 @@ public class AuthService : IAuthService
             {
                 Success = false,
                 Message = "Mat khau phai >= 6 ky tu",
+                StatusCode = (int)HttpStatusCode.BadRequest,
                 Data = null,
             };
         }
@@ -86,6 +92,7 @@ public class AuthService : IAuthService
             {
                 Success = false,
                 Message = "Email da ton tai",
+                StatusCode = (int)HttpStatusCode.Conflict,
                 Data = null,
             };
         }
@@ -102,6 +109,7 @@ public class AuthService : IAuthService
         {
             Success = true,
             Message = "Dang ky thanh cong",
+            StatusCode = (int)HttpStatusCode.Created,
             Data = new AccountLoginResponse
             {
                 AccountId = user.AccountId,
@@ -109,6 +117,39 @@ public class AuthService : IAuthService
                 Role = user.Role.ToString(),
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt.ToString(),
+            },
+        };
+    }
+
+    public async Task<ApiResponse<AccountLoginResponse>> GetMe(int accountId)
+    {
+        var infoAccount = await _context
+            .Accounts.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+        if (infoAccount == null)
+        {
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Tai khoan khong ton tai",
+                StatusCode = (int)HttpStatusCode.NotFound,
+                Data = null,
+            };
+        }
+
+        return new ApiResponse<AccountLoginResponse>
+        {
+            Success = true,
+            Message = "Lay thong tin tai khoan thanh cong",
+            StatusCode = (int)HttpStatusCode.OK,
+            Data = new AccountLoginResponse
+            {
+                AccountId = infoAccount.AccountId,
+                Email = infoAccount.Email.ToString(),
+                Role = infoAccount.Role.ToString(),
+                IsActive = infoAccount.IsActive,
+                CreatedAt = infoAccount.CreatedAt.ToString(),
             },
         };
     }

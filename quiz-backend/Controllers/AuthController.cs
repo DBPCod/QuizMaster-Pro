@@ -1,4 +1,8 @@
+using System.Net;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using QuizBackend.Common;
 using QuizBackend.DTOs.Requests;
 using QuizBackend.DTOs.Responses;
 using QuizBackend.Services.Interfaces;
@@ -35,6 +39,22 @@ public class AuthController : ControllerBase
     )
     {
         var result = await _authService.RegisterAsync(accountRegisterRequest);
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        Console.WriteLine(accountId);
+        var result = await _authService.GetMe(int.Parse(accountId));
+
         if (!result.Success)
         {
             return BadRequest(result);
