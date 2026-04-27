@@ -123,11 +123,11 @@ public class AuthService : IAuthService
 
     public async Task<ApiResponse<AccountLoginResponse>> GetMe(int accountId)
     {
-        var infoAccount = await _context
+        var isValidMatch = await _context
             .Accounts.AsNoTracking()
             .FirstOrDefaultAsync(u => u.AccountId == accountId);
 
-        if (infoAccount == null)
+        if (isValidMatch == null)
         {
             return new ApiResponse<AccountLoginResponse>
             {
@@ -145,11 +145,56 @@ public class AuthService : IAuthService
             StatusCode = (int)HttpStatusCode.OK,
             Data = new AccountLoginResponse
             {
-                AccountId = infoAccount.AccountId,
-                Email = infoAccount.Email.ToString(),
-                Role = infoAccount.Role.ToString(),
-                IsActive = infoAccount.IsActive,
-                CreatedAt = infoAccount.CreatedAt.ToString(),
+                AccountId = isValidMatch.AccountId,
+                Email = isValidMatch.Email.ToString(),
+                Role = isValidMatch.Role.ToString(),
+                IsActive = isValidMatch.IsActive,
+                CreatedAt = isValidMatch.CreatedAt.ToString(),
+            },
+        };
+    }
+
+    public async Task<ApiResponse<AccountChangeResponse>> ChangePassword(
+        AccountChangeRequest request
+    )
+    {
+        var (isValid, message) = Valid.Validate(request.PasswordNew);
+        if (!isValid)
+        {
+            return new ApiResponse<AccountChangeResponse>
+            {
+                Success = false,
+                Message = message,
+                StatusCode = (int)HttpStatusCode.BadRequest,
+            };
+        }
+        var account = await _context.Accounts.FirstOrDefaultAsync(u =>
+            u.AccountId == request.AccountId
+        );
+
+        var isValidMatch = BCrypt.Net.BCrypt.Verify(request.PasswordOld, account.PasswordHash);
+        if (!isValidMatch)
+        {
+            return new ApiResponse<AccountChangeResponse>
+            {
+                Success = false,
+                Message = "Mat khau khong chinh xac",
+                StatusCode = (int)HttpStatusCode.BadRequest,
+            };
+        }
+
+        return new ApiResponse<AccountChangeResponse>
+        {
+            Success = true,
+            Message = "Doi mat khau thanh cong",
+            StatusCode = (int)HttpStatusCode.OK,
+            Data = new AccountChangeResponse
+            {
+                AccountId = account.AccountId,
+                Email = account.Email.ToString(),
+                Role = account.Role.ToString(),
+                IsActive = account.IsActive,
+                CreatedAt = account.CreatedAt.ToString(),
             },
         };
     }

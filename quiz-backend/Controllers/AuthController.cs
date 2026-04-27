@@ -52,13 +52,36 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> GetMe()
     {
         var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        Console.WriteLine(accountId);
         var result = await _authService.GetMe(int.Parse(accountId));
 
         if (!result.Success)
         {
             return BadRequest(result);
         }
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPut("change-pass-word")]
+    public async Task<IActionResult> ChangePassword([FromBody] AccountChangeRequest request)
+    {
+        var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        request.AccountId = int.Parse(accountId);
+        var result = await _authService.ChangePassword(request);
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        //chữa cháy
+        var newClaims = new AccountLoginResponse
+        {
+            AccountId = result.Data.AccountId,
+            Email = result.Data.Email,
+            Role = result.Data.Role,
+        };
+        var newToken = _authService.GenerateJwtToken(newClaims);
 
         return Ok(result);
     }

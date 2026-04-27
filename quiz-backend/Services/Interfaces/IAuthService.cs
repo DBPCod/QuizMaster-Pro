@@ -10,5 +10,6 @@ namespace QuizBackend.Services.Interfaces
         string GenerateJwtToken(AccountLoginResponse accountLoginResponse);
         Task<ApiResponse<AccountLoginResponse>> RegisterAsync(AccountRegisterRequest request);
         Task<ApiResponse<AccountLoginResponse>> GetMe(int accountId);
+        Task<ApiResponse<AccountChangeResponse>> ChangePassword(AccountChangeRequest request);
     }
 }
