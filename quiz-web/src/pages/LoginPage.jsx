@@ -26,18 +26,18 @@ export default function LoginPage() {
   return (
     <section
       // 2. Thêm các class để ảnh phủ kín và căn giữa
-      className="w-full bg-fixed min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-4"
+      className="w-full bg-fixed flex items-center justify-center bg-cover bg-center bg-no-repeat px-4"
       // 3. Đưa style vào đúng vị trí trong thẻ mở
       style={{ backgroundImage: `url(${backgroundAuth})` }}
     >
-      <div className="max-w-md w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 border border-white/20">
+      <div className="max-w-sm w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 border border-white/20 my-10">
 
         {/* Logo & Header */}
         <div className="flex flex-col items-center">
           <img src={logo} alt="Logo" className="w-20 mb-4 animate-bounce" />
-          <h1 className="text-2xl font-bold !text-black text-center">
+          <h2 className="text-2xl font-bold !text-black text-center">
             Chào mừng thiên tài trở lại
-          </h1>
+          </h2>
           <p className="text-gray-500 text-sm text-center mt-2">
             Sẵn sàng chinh phục bảng xếp hạng hôm nay chứ?
           </p>
