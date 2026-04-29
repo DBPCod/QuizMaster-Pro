@@ -1,6 +1,6 @@
 import { FaPuzzlePiece } from 'react-icons/fa';
 
-export default function HeaderAuth() {
+export default function HeaderAuthPage() {
   return (
     <section className="flex w-full bg-[#E8ECFB] justify-between items-center px-6 h-12">
       <div className="flex items-center gap-2">
