@@ -30,7 +30,7 @@ export default function LoginPage() {
       // 3. Đưa style vào đúng vị trí trong thẻ mở
       style={{ backgroundImage: `url(${backgroundAuth})` }}
     >
-      <div className="max-w-sm w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 border border-white/20 my-10">
+      <div className="max-w-sm w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-6 border border-white/20 my-8">
 
         {/* Logo & Header */}
         <div className="flex flex-col items-center">
