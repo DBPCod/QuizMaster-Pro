@@ -4,3 +4,4 @@
 25/04/2026: cập nhật thêm api login, triển khai database trên TiDB và navicat. 
 26/04/2026: Cập nhật thêm api register và sửa lại đối tượng trả về trong chức năng login.
 27/04/2026: cập nhật thêm api getme và đổi mật khẩu.
+28/04/2026: cập nhật thêm link figmma và thiết kế giao diện figma.
