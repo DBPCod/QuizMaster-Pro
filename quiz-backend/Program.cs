@@ -44,6 +44,19 @@ builder.Services.AddSwaggerGen(c =>
         }
     );
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "MyAllowSpecificOrigins",
+        policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:5174") // Địa chỉ của Frontend Vite
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    );
+});
 builder.Services.AddControllers();
 
 //load file .env
@@ -95,6 +108,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseHttpsRedirection();
+app.UseCors("MyAllowSpecificOrigins");
 app.UseAuthentication(); // Giải mã token, xác định User là ai
 app.UseAuthorization();
 app.MapControllers();

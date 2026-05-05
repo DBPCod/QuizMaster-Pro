@@ -5,19 +5,28 @@ import { FaRocket, FaEnvelope, FaLock, FaEyeSlash, FaEye } from "react-icons/fa"
 import backgroundAuth from '../assets/backgroundAuth.png';
 // @ts-ignore
 import logo from "../assets/imgLogin.png";
+import { Link } from "react-router-dom";
+import { CreateLoginRequest } from "../dtos/requests/CreateLoginRequest";
+import authService from "../services/authService.js";
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
+
     e.preventDefault();
     setLoading(true);
-    console.log("Đang đăng nhập:", { email, password });
-    setTimeout(() => {
+    var loginRequest = new CreateLoginRequest(email, password);
+    if (!loginRequest.isValid()) {
+      alert("Email hoặc mật khẩu không đúng định dạng");
       setLoading(false);
-      alert("Đăng nhập thành công!");
-    }, 1500);
+      return;
+    }
+
+    var response = await authService.login(loginRequest);
+    console.log(response + " data");
+    setLoading(false);
   };
 
   const handleEmailChange = (e) => setEmail(e.target.value);
@@ -103,9 +112,12 @@ export default function LoginPage() {
 
         <div className="text-center text-sm text-gray-600">
           Chưa có tài khoản?{" "}
-          <a href="#" className="text-blue-600 font-bold hover:underline">
+          <Link
+            to="/register"
+            className="text-shadow-blue-600xt-blue-600 font-bold hover:underline"
+          >
             Đăng ký
-          </a>
+          </Link>
         </div>
       </div>
     </section>
