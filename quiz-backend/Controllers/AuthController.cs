@@ -6,7 +6,6 @@ using QuizBackend.Common;
 using QuizBackend.DTOs.Requests;
 using QuizBackend.DTOs.Responses;
 using QuizBackend.Services.Interfaces;
-using RouteAttribute = Microsoft.AspNetCore.Components.RouteAttribute;
 
 [Route("api/auth")]
 [ApiController]
