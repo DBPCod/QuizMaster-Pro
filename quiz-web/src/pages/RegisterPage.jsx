@@ -103,7 +103,7 @@ const RegisterPage = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="font-bold text-black block w-full pl-10 pr-10 py-2.5 border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-gray-400 focus:placeholder-transparent transition-all duration-200"
+                className="font-bold bg-white text-black block w-full pl-10 pr-10 py-2.5 border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm  focus:placeholder-transparent transition-all duration-200"
                 placeholder="••••••••"
               />
               <button
