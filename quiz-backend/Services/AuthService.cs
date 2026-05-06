@@ -23,16 +23,26 @@ public class AuthService : IAuthService
     public async Task<ApiResponse<AccountLoginResponse>> LoginAsync(AccountLoginRequest request)
     {
         var user = await _context.Accounts.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (user == null || !(BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)))
+
+        if (user == null)
         {
             return new ApiResponse<AccountLoginResponse>
             {
                 Success = false,
-                Message = "Email hoac mat khau khong chinh xac",
-                StatusCode = (int)HttpStatusCode.BadRequest,
+                Message = "Tai khoan khong ton tai",
+                StatusCode = (int)HttpStatusCode.NotFound,
             };
         }
 
+        if (!(BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash)))
+        {
+            return new ApiResponse<AccountLoginResponse>
+            {
+                Success = false,
+                Message = "Mat khau khong chinh xac",
+                StatusCode = (int)HttpStatusCode.BadRequest,
+            };
+        }
         if (!user.IsActive)
         {
             return new ApiResponse<AccountLoginResponse>

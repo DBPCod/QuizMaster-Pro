@@ -24,7 +24,7 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(accountLoginRequest);
         if (!result.Success)
         {
-            return BadRequest(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         var token = _authService.GenerateJwtToken(result.Data);

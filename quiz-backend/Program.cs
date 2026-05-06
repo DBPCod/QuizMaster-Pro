@@ -51,7 +51,7 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy
-                .WithOrigins("http://localhost:5174") // Địa chỉ của Frontend Vite
+                .WithOrigins("http://localhost:5174", "http://localhost:5173") // Địa chỉ của Frontend Vite
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         }

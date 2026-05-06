@@ -6,7 +6,12 @@ import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTrophy } from 'react-icons/fa'
 // import backgroundAuth from './path/to/background.jpg';
 // @ts-ignore
 import backgroundAuth from '../assets/backgroundAuth.png';
+import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
+import { CreateLoginRequest } from '../dtos/requests/CreateLoginRequest';
+import { CreateRegisterRequest } from '../dtos/requests/CreateRegisterRequest';
+import { toast } from 'react-toastify';
+import authService from '../services/authService';
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,10 +19,36 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const newAccount = new CreateRegisterRequest(email, password);
+    if (password == confirmPassword) {
+      if (!newAccount.isValid()) {
+        toast.error("Mật khẩu không đúng định dạng");
+      }
+      try {
+        const response = await authService.register(newAccount);
+        toast.success("Tao tai khoan thanh cong");
+        setLoading(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500)
+      } catch (err) {
+        const status = err.response?.status;
+        if (status === 404) {
+          toast.error("Tai khoan khong ton tai");
+          return;
+        } else if (status === 400) {
+          toast.error("Loi he thong");
+          return;
+        }
+        setLoading(false);
+      }
+    } else {
+      toast.warn("Mat khau xac nhan khong chinh xac");
+    }
     // Logic xử lý đăng ký của bạn
     setTimeout(() => setLoading(false), 2000);
   };
@@ -103,7 +134,7 @@ const RegisterPage = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="font-bold text-black block w-full pl-10 pr-10 py-2.5 border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm placeholder:text-gray-400 focus:placeholder-transparent transition-all duration-200"
+                className="font-bold text-black block w-full pl-10 pr-10 py-2.5 border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm  focus:placeholder-transparent transition-all duration-200"
                 placeholder="••••••••"
               />
               <button
