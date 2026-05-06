@@ -8,6 +8,10 @@ const authService = {
   register: (data) => {
     return axiosClient.post(API_ENDPOINTS.REGISTER, data);
   },
+
+  getMe: () => {
+    return axiosClient.get(API_ENDPOINTS.ME);
+  }
 }
 
 export default authService;

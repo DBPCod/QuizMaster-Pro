@@ -9,14 +9,59 @@ import { Link } from "react-router-dom";
 import { CreateLoginRequest } from "../dtos/requests/CreateLoginRequest";
 import authService from "../services/authService.js";
 import { toast } from "react-toastify";
+import { useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
   const [errors, setErrors] = useState({
     password: ""
   });
+
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      // không có token
+      if (!token) {
+        setIsLogin(false);
+        return;
+      }
+
+      try {
+        // decode token
+        const decoded = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+
+        // token hết hạn
+        // @ts-ignore
+        if (decoded.exp < currentTime) {
+          toast.warn("Token đã hết hạn");
+          localStorage.removeItem("accessToken");
+          setIsLogin(false);
+          return;
+        }
+
+        // verify token với backend
+        const response = await authService.getMe();
+        console.log(response.data);
+
+        // hợp lệ
+        setIsLogin(true);
+
+      } catch (err) {
+        console.log(err.response?.status);
+
+        setIsLogin(false);
+      }
+    };
+
+    checkLogin();
+  }, []);
 
   const handleSubmit = async (e) => {
 
@@ -144,7 +189,7 @@ export default function LoginPage() {
           Chưa có tài khoản?{" "}
           <Link
             to="/register"
-            className="text-shadow-blue-600xt-blue-600 font-bold hover:underline"
+            className="text-shadow-blue-600 text-blue-600 font-bold hover:underline"
           >
             Đăng ký
           </Link>
@@ -153,3 +198,5 @@ export default function LoginPage() {
     </section>
   );
 }
+
+
