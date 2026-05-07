@@ -5,3 +5,13 @@
 26/04/2026: Cập nhật thêm api register và sửa lại đối tượng trả về trong chức năng login.
 27/04/2026: cập nhật thêm api getme và đổi mật khẩu.
 28/04/2026: cập nhật thêm link figmma và thiết kế giao diện figma.
+29/04/2026: Khởi tạo giao diện xác thực; thêm trang HeaderAuth và LoginPage; điều chỉnh CSS, margin và chuẩn hóa tên hàm cho trang Header.
+03/05/2026: Hoàn tất kiểm soát mã nguồn và gộp nhánh tính năng (Merge pull request #5).
+04/05/2026: Phát triển giao diện trang đăng ký (RegisterPage); tối ưu hóa điều hướng bằng cách chuyển đổi thẻ <a> sang Link; sửa lỗi import sai thư viện trong Controller và bắt đầu viết API đăng nhập.
+05/05/2026: Khắc phục triệt để lỗi đường dẫn do thư viện không tương thích; gộp nhánh để ổn định mã nguồn (Merge pull request #6).
+06/05/2026: Tập trung hoàn thiện hệ thống xác thực:
+  + Tích hợp thành công API đăng nhập và đăng ký cho cả Frontend và Backend.
+  + Xử lý logic tự động đăng nhập bằng useEffect.
+  + Tối ưu hóa Backend: cập nhật cấu hình CORS, thay đổi mã trạng thái (status code) động thay vì để cứng lỗi BadRequest.
+  + Cải thiện UI/UX: sửa lỗi màu sắc giao diện, xử lý lỗi autofill của trình duyệt  và tùy chỉnh thông báo lỗi (custom alert).
+  + Gộp nhánh tính năng hoàn chỉnh (Merge pull request #7).
