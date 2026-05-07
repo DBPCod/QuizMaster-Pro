@@ -11,6 +11,7 @@ import authService from "../services/authService.js";
 import { toast } from "react-toastify";
 import { useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import ErrorHandler from "../services/ErrorHandler.js";
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,7 +56,6 @@ export default function LoginPage() {
 
       } catch (err) {
         console.log(err.response?.status);
-
         setIsLogin(false);
       }
     };
@@ -84,16 +84,10 @@ export default function LoginPage() {
       }
       setLoading(false);
     } catch (err) {
-      const status = err.response?.status;
-      if (status === 404) {
-        toast.error("Tài khoản không tồn tại");
-      }
-      else if (status === 400) {
-        toast.warn("Email hoặc mật khẩu không chính xác");
-      }
-      else if (status === 403) {
-        toast.error("Tài khoản đã bị khóa");
-      }
+      const statusCode = err.response?.status;
+      const errorHandler = new ErrorHandler();
+      const message = errorHandler.display(statusCode, err.response?.data.message);
+      toast.error(`${message}`);
     }
     setLoading(false);
   };
