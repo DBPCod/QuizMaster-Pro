@@ -40,7 +40,7 @@ public class AuthController : ControllerBase
         var result = await _authService.RegisterAsync(accountRegisterRequest);
         if (!result.Success)
         {
-            return BadRequest(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         return Ok(result);
@@ -55,7 +55,7 @@ public class AuthController : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         return Ok(result);
