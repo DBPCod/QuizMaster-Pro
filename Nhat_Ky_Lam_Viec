@@ -15,3 +15,5 @@
   + Tối ưu hóa Backend: cập nhật cấu hình CORS, thay đổi mã trạng thái (status code) động thay vì để cứng lỗi BadRequest.
   + Cải thiện UI/UX: sửa lỗi màu sắc giao diện, xử lý lỗi autofill của trình duyệt  và tùy chỉnh thông báo lỗi (custom alert).
   + Gộp nhánh tính năng hoàn chỉnh (Merge pull request #7).
+07/05/2026: Phân chia lại cấu trúc xử lý lỗi trả về
+08/05/2026: Vẽ sequence và usecase chức năng quản lý quiz
