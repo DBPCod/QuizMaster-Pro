@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using QuizBackend.Models;
 
 [Table("Accounts")]
 public class Account
@@ -24,4 +25,8 @@ public class Account
 
     [Required]
     public bool IsActive {get; set;} = true;
+
+    public bool IsDelete {get; set;} =false;
+    public DateTime? DeletedAt { get; set; }
+    public ICollection<Quiz> Quizzes = new List<Quiz>();
 }   
