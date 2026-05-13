@@ -13,5 +13,7 @@ namespace QuizBackend.Models
         public int AccountId { get; set; }
 
         public Account Account { get; set; } = null!;
+
+        public ICollection<Question> Questions = new List<Question>();
     }
 }

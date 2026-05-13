@@ -76,6 +76,47 @@ namespace QuizBackend.Data
                     .HasForeignKey(q => q.AccountId)
                     .OnDelete(DeleteBehavior.Cascade); // Khi xóa Account sẽ xóa luôn các Quiz liên quan
             });
+
+            modelBuilder.Entity<Question>(entity =>
+            {
+                entity.ToTable("questions");
+                entity.HasKey(q => q.QuestionId);
+
+                entity.Property(q => q.Content).IsRequired().HasMaxLength(4000); ;
+                
+                // Enum QuestionType
+                entity.Property(q => q.Type)
+                    .HasMaxLength(50)
+                    .HasConversion<string>();
+
+                entity.Property(q => q.Score).HasPrecision(5, 2); // Chính xác hơn cho điểm số
+
+                entity.HasOne(q => q.Quiz)
+                    .WithMany(quiz => quiz.Questions)
+                    .HasForeignKey(q => q.QuizId);
+            });
+
+            modelBuilder.Entity<Answer>(entity =>
+            {
+                entity.ToTable("answers");
+                entity.HasKey(a => a.AnswerId);
+
+                entity.Property(a => a.Content).IsRequired().HasMaxLength(500);
+                
+                // OrderIndex dùng tinyint (1 byte) cực kỳ tốt cho TiDB
+                entity.Property(a => a.OrderIndex)
+                    .IsRequired()
+                    .HasColumnType("tinyint");;
+
+                entity.Property(a => a.IsCorrect).IsRequired(); // TiDB/MySQL dùng bit cho bool
+
+                entity.HasOne(a => a.Question)
+                    .WithMany(q => q.Answers)
+                    .HasForeignKey(a => a.QuestionId);
+            });
+
+
+
         }
         public DbSet<Account> Accounts {get; set;}
         public DbSet<Quiz> Quizzes {get; set;}
