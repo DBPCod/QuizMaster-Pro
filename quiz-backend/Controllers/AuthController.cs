@@ -51,8 +51,11 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> GetMe()
     {
         var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var result = await _authService.GetMe(int.Parse(accountId));
-
+        if (!int.TryParse(accountId, out int parsedAccountId))
+        {
+            return BadRequest(new { message = "Định dạng mã tài khoản không hợp lệ." });
+        }
+        var result = await _authService.GetMe(parsedAccountId);
         if (!result.Success)
         {
             return StatusCode(result.StatusCode, result);

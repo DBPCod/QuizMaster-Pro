@@ -98,6 +98,8 @@ builder.Services.AddDbContext<MyDbContext>(options =>
 );
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IQuizService, QuizService>();
+
 
 var app = builder.Build();
 

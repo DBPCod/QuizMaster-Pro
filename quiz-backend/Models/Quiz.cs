@@ -11,7 +11,9 @@ namespace QuizBackend.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public int AccountId { get; set; }
-
+        public bool IsDeleted { get; set; } = false; 
         public Account Account { get; set; } = null!;
+
+        public ICollection<Question> Questions = new List<Question>();
     }
 }
