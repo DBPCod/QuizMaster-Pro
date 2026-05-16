@@ -51,5 +51,39 @@ namespace QuizBackend.Controllers
             // GIAI ĐOẠN 4: Trả về trạng thái HTTP Code động dựa trên kết quả của Service
             return StatusCode(result.StatusCode, result);
         }
+
+        [HttpDelete("{quizId}")]
+        public async Task<IActionResult> DeleteQuiz(int quizId)
+        {
+            var accountIdClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(accountIdClaim, out int accountId))
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Token không hợp lệ."
+                });
+            }
+
+            var deleted = await _quizService
+                .SoftDeleteQuizAsync(quizId, accountId);
+
+            if (!deleted)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Quiz không tồn tại hoặc bạn không có quyền."
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Xóa quiz thành công."
+            });
+        }
     }
 }

@@ -95,4 +95,23 @@ public class QuizService : IQuizService
             throw; // Re-throw để Controller xử lý trả về 500
         }
     }
+
+    public async Task<bool> SoftDeleteQuizAsync(int quizId,int accountId)
+    {
+        var quiz = await _context.Quizzes
+            .FirstOrDefaultAsync(q =>
+                q.QuizId == quizId &&
+                q.AccountId == accountId);
+
+        if (quiz == null)
+        {
+            return false;
+        }
+
+        quiz.IsDeleted = true;
+
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
 }
