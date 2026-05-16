@@ -115,10 +115,12 @@ namespace QuizBackend.Data
                     .HasForeignKey(a => a.QuestionId);
             });
 
-
-
         }
         public DbSet<Account> Accounts {get; set;}
         public DbSet<Quiz> Quizzes {get; set;}
+
+        public DbSet<Question> Questions {get; set;}
+        public DbSet<Answer> Answers {get; set;}
+        
     }
 }
