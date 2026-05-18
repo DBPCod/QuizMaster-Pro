@@ -17,3 +17,7 @@
   + Gộp nhánh tính năng hoàn chỉnh (Merge pull request #7).
 07/05/2026: Phân chia lại cấu trúc xử lý lỗi trả về
 08/05/2026: Vẽ sequence và usecase chức năng quản lý quiz
+09/05/2026: fix sửa lỗi trong AuthController
+12/05/2026: thêm cấu hình và các model
+13/05/2026: tạo thêm bảng trong csdl
+16/05/2026: thêm api tạo quzz và xóa mềm quizz
