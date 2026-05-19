@@ -259,6 +259,45 @@ public class QuizService : IQuizService
         };
     }
 
+    public async Task<PagedResponse<GetQuizzesResponse>> GetQuizzesAsync(int page, int pageSize)
+    {
+
+        page = page <= 0 ? 1 : page;
+
+        pageSize = pageSize <= 0 ? 10 : pageSize;
+
+        pageSize = Math.Min(pageSize, 50);
+
+        var query = _context.Quizzes
+            .AsNoTracking();
+
+        var totalItems = await query.CountAsync();
+
+        var quizzes = await query
+            .OrderByDescending(q => q.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(q => new GetQuizzesResponse
+            {
+                QuizId = q.QuizId,
+                Title = q.Title,
+                Description = q.Description,
+                TotalQuestions = q.Questions.Count,
+                CreatedAt = q.CreatedAt
+            })
+            .ToListAsync();
+
+        return new PagedResponse<GetQuizzesResponse>
+        {
+            Items = quizzes,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = totalItems,
+            TotalPages = (int)Math.Ceiling(
+                totalItems / (double)pageSize)
+        };
+    }
+
     public async Task<bool> SoftDeleteQuizAsync(int quizId,int accountId)
     {
         var quiz = await _context.Quizzes

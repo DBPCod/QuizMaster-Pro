@@ -20,12 +20,12 @@ namespace QuizBackend.Controllers
 
         [HttpGet("{quizId}")]
         [Authorize]
-        public async Task<IActionResult> GetQuiz(int quizId)
+        public async Task<IActionResult> GetQuizDetail(int quizId)
         {
             var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(userEmail))
             {
-                return Unauthorized(new ApiResponse<GetQuizResponse>
+                return Unauthorized(new ApiResponse<GetQuizDetailResponse>
                 {
                     Success = false,
                     Message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
@@ -35,6 +35,16 @@ namespace QuizBackend.Controllers
 
             var result = await _quizService.GetQuizDetailAsync(quizId, userEmail);
             return StatusCode(result.StatusCode, result);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetQuizzes(int page = 1,int pageSize = 10)
+        {
+            var result = await _quizService
+                .GetQuizzesAsync(page, pageSize);
+
+            return Ok(result);
         }
 
         [HttpPost]
