@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 // Import các icon cần thiết theo mô tả của bạn
 import { FaPuzzlePiece, FaSearch, FaPlus, FaBell, FaUserCircle } from 'react-icons/fa';
 
@@ -33,10 +34,13 @@ const HeaderMain = () => {
             <div className="flex items-center gap-4">
                 
                 {/* Nút tạo mới có icon */}
-                <button className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition-all">
+                <NavLink 
+                    to="/createquiz" 
+                    className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm transition-all"
+                >
                     <FaPlus className="text-xs" />
                     <span>Tạo mới</span>
-                </button>
+                </NavLink>
 
                 {/* Icon thông báo có hiệu ứng hover và chấm đỏ nhỏ báo hiệu (Tùy chọn) */}
                 <div className="relative">
