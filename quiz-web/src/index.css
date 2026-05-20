@@ -118,3 +118,27 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+
+/* 1. Quy định độ rộng của thanh cuộn */
+::-webkit-scrollbar {
+  width: 8px; /* Độ rộng của thanh cuộn dọc */
+  height: 8px; /* Độ cao của thanh cuộn ngang */
+}
+
+/* 2. Phần nền bên dưới của thanh cuộn */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 10px;
+}
+ 
+/* 3. Cục chạy (thanh để bạn kéo chuột) */
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Màu xám nhạt giống màu của Tailwind */
+  border-radius: 10px; /* Bo tròn hai đầu cục kéo */
+}
+
+/* 4. Đổi màu đậm hơn khi người dùng di chuột vào */
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; 
+}
