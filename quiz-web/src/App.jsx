@@ -8,6 +8,7 @@ import QuizPage from './pages/Quiz/QuizPage';
 import { ToastContainer } from 'react-toastify';
 import QuizLayout from './layouts/QuizLayout';
 import LibraryPage from './pages/Quiz/LibraryPage';
+import CreateQuizLayout from './layouts/CreateQuizLayout';
 function App() {
   const [count, setCount] = useState(0)
 
@@ -24,6 +25,13 @@ function App() {
         <Route element={<QuizLayout></QuizLayout>}>
           <Route path="/quizpage" element={<QuizPage></QuizPage>}>
             <Route path="library" element={<LibraryPage />} />
+          </Route>
+        </Route>
+      </Routes>
+
+      <Routes>
+        <Route element={<CreateQuizLayout></CreateQuizLayout>}>
+          <Route path="/createquiz" element={<CreateQuizLayout></CreateQuizLayout>}>
           </Route>
         </Route>
       </Routes>
