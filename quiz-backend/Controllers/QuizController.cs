@@ -18,6 +18,35 @@ namespace QuizBackend.Controllers
             _quizService = quizService;
         }
 
+        [HttpGet("{quizId}")]
+        [Authorize]
+        public async Task<IActionResult> GetQuizDetail(int quizId)
+        {
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                return Unauthorized(new ApiResponse<GetQuizDetailResponse>
+                {
+                    Success = false,
+                    Message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
+                    StatusCode = 401
+                });
+            }
+
+            var result = await _quizService.GetQuizDetailAsync(quizId, userEmail);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetQuizzes(int page = 1,int pageSize = 10)
+        {
+            var result = await _quizService
+                .GetQuizzesAsync(page, pageSize);
+
+            return Ok(result);
+        }
+
         [HttpPost]
         [Authorize] // Bắt buộc phải đăng nhập để lấy Token JWT
         public async Task<IActionResult> CreateQuiz([FromBody] QuizRequest request)
@@ -47,6 +76,37 @@ namespace QuizBackend.Controllers
 
             // GIAI ĐOẠN 3: Ủy quyền toàn bộ logic xử lý dữ liệu cho tầng Service
             var result = await _quizService.CreateComplexQuizAsync(request, userEmail);
+
+            // GIAI ĐOẠN 4: Trả về trạng thái HTTP Code động dựa trên kết quả của Service
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPut("{quizId}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateComplexQuizAsync([FromBody] QuizRequest request, int quizId)
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(new ApiResponse<UpdateQuizResponse>
+                {
+                    Success = false,
+                    Message = "Dữ liệu gửi lên không hợp lệ.",
+                    StatusCode = 400
+                });
+            }
+
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                return Unauthorized(new ApiResponse<UpdateQuizResponse>
+                {
+                    Success = false,
+                    Message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
+                    StatusCode = 401
+                });
+            }
+            
+            var result = await _quizService.UpdateComplexQuizAsync(quizId,request, userEmail);
 
             // GIAI ĐOẠN 4: Trả về trạng thái HTTP Code động dựa trên kết quả của Service
             return StatusCode(result.StatusCode, result);
