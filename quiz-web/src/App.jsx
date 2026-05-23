@@ -9,6 +9,7 @@ import { ToastContainer } from 'react-toastify';
 import QuizLayout from './layouts/QuizLayout';
 import LibraryPage from './pages/Quiz/LibraryPage';
 import CreateQuizLayout from './layouts/CreateQuizLayout';
+import EditQuizLayout from './layouts/EditQuizLayout';
 function App() {
   const [count, setCount] = useState(0)
 
@@ -36,6 +37,9 @@ function App() {
         </Route>
       </Routes>
 
+      <Routes>
+        <Route path="/editquiz/:quizId" element={<EditQuizLayout />} />
+      </Routes>
       <ToastContainer
         position="top-right"
         autoClose={2500}
