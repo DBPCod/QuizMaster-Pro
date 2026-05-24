@@ -23,3 +23,4 @@
 16/05/2026: thêm api tạo quzz và xóa mềm quizz
 19/05/2026: thêm api get danh sách quiz và pagination, api cập nhật quiz và get quiz
 20/05/2026: đổi button thành navlink, thêm giao diện quiz, thêm component header, thêm giao diện hiển thị danh sách quiz
+23/05/2026: thêm giao diện sửa quiz
