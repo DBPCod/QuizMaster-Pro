@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { FaPuzzlePiece, FaSearch, FaPlus, FaBell, FaUserCircle } from 'react-icons/fa';
 
 const HeaderMain = () => {
+    
     return (
         // Header bọc ngoài cùng: full độ rộng, có đổ bóng nhẹ, viền dưới và cố định chiều cao
         <header className="w-full bg-white border-b border-gray-200 shadow-sm h-16 px-6 flex items-center justify-between">
