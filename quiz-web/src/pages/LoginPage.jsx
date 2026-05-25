@@ -12,12 +12,14 @@ import { toast } from "react-toastify";
 import { useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import ErrorHandler from "../services/ErrorHandler.js";
+import { useNavigate } from "react-router-dom";
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
+  const navigate = useNavigate();
   const [errors, setErrors] = useState({
     password: ""
   });
@@ -53,7 +55,7 @@ export default function LoginPage() {
 
         // hợp lệ
         setIsLogin(true);
-
+        navigate("/quizpage");
       } catch (err) {
         console.log(err.response?.status);
         setIsLogin(false);
@@ -61,7 +63,7 @@ export default function LoginPage() {
     };
 
     checkLogin();
-  }, []);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
 
