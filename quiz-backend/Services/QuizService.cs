@@ -259,20 +259,32 @@ public class QuizService : IQuizService
         };
     }
 
-    public async Task<PagedResponse<GetQuizzesResponse>> GetQuizzesAsync(int page, int pageSize)
+    public async Task<PagedResponse<GetQuizzesResponse>> GetQuizzesAsync(int page, int pageSize, string? search)
     {
-
+        // 1. Chuẩn hóa tham số phân trang
         page = page <= 0 ? 1 : page;
-
         pageSize = pageSize <= 0 ? 10 : pageSize;
-
         pageSize = Math.Min(pageSize, 50);
 
-        var query = _context.Quizzes
-            .AsNoTracking();
+        // 2. Khởi tạo Query gốc
+        var query = _context.Quizzes.AsNoTracking();
 
+        // 3. Thực hiện lọc dữ liệu (Server-Side Search) nếu có từ khóa tìm kiếm
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            string cleanSearch = search.Trim().ToLower();
+            
+            // Lọc theo Title HOẶC Description (Có check null an toàn cho DB)
+            query = query.Where(q => 
+                (q.Title != null && q.Title.ToLower().Contains(cleanSearch)) ||
+                (q.Description != null && q.Description.ToLower().Contains(cleanSearch))
+            );
+        }
+
+        // 4. Tính toán tổng số Items sau khi đã lọc dữ liệu (Quan trọng cho Pagination)
         var totalItems = await query.CountAsync();
 
+        // 5. Phân trang và Mapping dữ liệu ra DTO
         var quizzes = await query
             .OrderByDescending(q => q.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -287,14 +299,14 @@ public class QuizService : IQuizService
             })
             .ToListAsync();
 
+        // 6. Trả về cấu trúc PagedResponse hoàn chỉnh
         return new PagedResponse<GetQuizzesResponse>
         {
             Items = quizzes,
             Page = page,
             PageSize = pageSize,
             TotalItems = totalItems,
-            TotalPages = (int)Math.Ceiling(
-                totalItems / (double)pageSize)
+            TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
         };
     }
 

@@ -39,10 +39,13 @@ namespace QuizBackend.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetQuizzes(int page = 1,int pageSize = 10)
+        public async Task<IActionResult> GetQuizzes(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10, 
+            [FromQuery] string? search = null) // Thêm tham số search (cho phép null)
         {
             var result = await _quizService
-                .GetQuizzesAsync(page, pageSize);
+                .GetQuizzesAsync(page, pageSize, search);
 
             return Ok(result);
         }

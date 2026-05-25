@@ -39,7 +39,7 @@ public class AuthService : IAuthService
             return new ApiResponse<AccountLoginResponse>
             {
                 Success = false,
-                Message = "Mat khau khong chinh xac",
+                Message = "Tai khoan hoac mat khau khong chinh xac",
                 StatusCode = (int)HttpStatusCode.BadRequest,
             };
         }
@@ -188,7 +188,7 @@ public class AuthService : IAuthService
             return new ApiResponse<AccountChangeResponse>
             {
                 Success = false,
-                Message = "Mat khau khong chinh xac",
+                Message = "Tai khoan hoac mat khau khong chinh xac",
                 StatusCode = (int)HttpStatusCode.BadRequest,
             };
         }

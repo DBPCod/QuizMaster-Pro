@@ -7,6 +7,6 @@ public interface IQuizService
 
     Task<ApiResponse<CreateQuizResponse>> UpdateComplexQuizAsync(int quizId, QuizRequest request, string userEmail);
     Task<ApiResponse<QuizDetailResponse>> GetQuizDetailAsync(int quizId, string userEmail);
-    Task<PagedResponse<GetQuizzesResponse>> GetQuizzesAsync(int page, int pageSize);
+    Task<PagedResponse<GetQuizzesResponse>> GetQuizzesAsync(int page, int pageSize, string? search);
 
 }
