@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // Thêm sử dụng useSearchParams
 import { 
   FaSortAmountDown, FaEllipsisH, FaEdit, FaTrashAlt, 
   FaRegClock, FaListOl, FaSpinner, FaExclamationCircle,
@@ -9,37 +9,41 @@ import quizService from '../../services/quizService';
 
 const LibraryPage = () => {
     const navigate = useNavigate();
-    const [openMenuId, setOpenMenuId] = useState(null);
+    const [searchParams] = useSearchParams();
     
-    // --- CÁC STATE QUẢN LÝ DỮ LIỆU VÀ TRẠNG THÁI API ---
+    // Lấy từ khóa search trực tiếp từ thanh URL trình duyệt
+    const searchQuery = searchParams.get('search') || '';
+
+    const [openMenuId, setOpenMenuId] = useState(null);
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // --- STATE QUẢN LÝ PHÂN TRANG ---
+    // Quản lý phân trang
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const PAGE_LIMIT = 6; // Số lượng item trên mỗi trang
+    const PAGE_LIMIT = 6; 
 
-    // Ảnh mặc định cho tất cả quiz
     const defaultQuizImage = "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=500&auto=format&fit=crop&q=60";
 
-    // --- GỌI API KHI COMPONENT MOUNT HOẶC ĐỔI PAGE ---
+    // Khi từ khóa tìm kiếm trên URL thay đổi, lập tức đưa trang hiện tại về trang 1
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    // --- THEO DÕI SÁT SAO CẢ CURRENT_PAGE VÀ SEARCH_QUERY ---
     useEffect(() => {
         const loadQuizzes = async () => {
             try {
                 setLoading(true);
                 setError(null);
                 
-                // Truyền currentPage và limit vào service
-                const response = await quizService.quizzes(currentPage, PAGE_LIMIT);
+                // Gửi kèm tham số searchQuery lên Backend Service
+                const response = await quizService.quizzes(currentPage, PAGE_LIMIT, searchQuery);
                 
                 const data = response?.data ? response.data : response;
                 
                 setQuizzes(data?.items || []);
-                
-                // Lấy totalPages từ Backend trả về (Giả định BE trả về totalPages hoặc tổng số record 'totalCount')
-                // Nếu BE trả về totalCount, bạn tính: Math.ceil(data.totalCount / PAGE_LIMIT)
                 setTotalPages(data?.totalPages || 1);
 
             } catch (err) {
@@ -51,18 +55,14 @@ const LibraryPage = () => {
         };
 
         loadQuizzes();
-    }, [currentPage]); // Theo dõi sát sao currentPage để kích hoạt gọi lại API
+    }, [currentPage, searchQuery]); // Tự động trigger lại hàm khi đổi trang hoặc thay đổi chuỗi tìm kiếm
 
-    // Hàm định dạng thời gian sang kiểu Việt Nam
     const formatDate = (dateString) => {
         if (!dateString) return "Không rõ thời gian";
         const date = new Date(dateString);
         return date.toLocaleString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
         });
     };
 
@@ -76,17 +76,14 @@ const LibraryPage = () => {
         navigate(`/editquiz/${id}`);
     };
 
-    // Hàm xử lý chuyển trang an toàn
     const handlePageChange = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
             setCurrentPage(pageNumber);
-            setOpenMenuId(null); // Đóng các menu đang mở nếu có
-            // Tùy chọn: Cuộn mượt lên đầu trang khi qua trang mới
+            setOpenMenuId(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    // --- GIAO DIỆN KHI ĐANG TẢI DỮ LIỆU ---
     if (loading) {
         return (
             <div className="w-full min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
@@ -96,14 +93,13 @@ const LibraryPage = () => {
         );
     }
 
-    // --- GIAO DIỆN KHI XẢY RA LỖI MẠNG / API ---
     if (error) {
         return (
             <div className="w-full min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
                 <FaExclamationCircle className="text-red-500 text-4xl mb-3" />
                 <p className="text-gray-700 font-semibold text-base mb-2">{error}</p>
                 <button 
-                    onClick={() => setCurrentPage(1)} // Thử reset lại về trang 1
+                    onClick={() => setCurrentPage(1)} 
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all shadow-sm"
                 >
                     Thử lại
@@ -119,7 +115,13 @@ const LibraryPage = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-gray-200 gap-4">
                     <div>
                         <h5 className="text-2xl font-bold text-gray-800 text-left">Thư viện của tôi</h5>
-                        <p className="text-sm text-gray-500 mt-1">Quản lý và tổ chức các bài trắc nghiệm của bạn</p>
+                        {searchQuery ? (
+                            <p className="text-sm text-blue-600 mt-1 font-medium">
+                                Kết quả tìm kiếm cho: "{searchQuery}" ({quizzes.length} kết quả trên trang này)
+                            </p>
+                        ) : (
+                            <p className="text-sm text-gray-500 mt-1">Quản lý và tổ chức các bài trắc nghiệm của bạn</p>
+                        )}
                     </div>
                     
                     <div className="flex flex-wrap gap-2">
@@ -132,7 +134,9 @@ const LibraryPage = () => {
                 {/* THÀNH PHẦN 2: GRID LƯỚI DANH SÁCH BÀI QUIZ */}
                 {quizzes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center pt-20">
-                        <p className="text-gray-400 font-medium text-sm">Thư viện hiện tại đang rỗng. Hãy tạo bài Quiz mới!</p>
+                        <p className="text-gray-400 font-medium text-sm">
+                            {searchQuery ? "Không tìm thấy bài trắc nghiệm nào phù hợp từ khóa." : "Thư viện hiện tại đang rỗng. Hãy tạo bài Quiz mới!"}
+                        </p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
@@ -197,10 +201,9 @@ const LibraryPage = () => {
                 )}
             </div>
 
-            {/* THÀNH PHẦN 3: THANH PHÂN TRANG (PAGINATION PANEL) */}
+            {/* THÀNH PHẦN 3: THANH PHÂN TRANG */}
             {quizzes.length > 0 && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-12 pt-6 border-t border-gray-200">
-                    {/* Nút Previous */}
                     <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
@@ -213,7 +216,6 @@ const LibraryPage = () => {
                         <FaChevronLeft className="w-3.5 h-3.5" />
                     </button>
 
-                    {/* Danh sách các số trang */}
                     {[...Array(totalPages)].map((_, index) => {
                         const pageNum = index + 1;
                         return (
@@ -231,7 +233,6 @@ const LibraryPage = () => {
                         );
                     })}
 
-                    {/* Nút Next */}
                     <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
