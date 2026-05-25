@@ -6,20 +6,63 @@ import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaTrophy } from 'react-icons/fa'
 // import backgroundAuth from './path/to/background.jpg';
 // @ts-ignore
 import backgroundAuth from '../assets/backgroundAuth.png';
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import { CreateLoginRequest } from '../dtos/requests/CreateLoginRequest';
 import { CreateRegisterRequest } from '../dtos/requests/CreateRegisterRequest';
 import { toast } from 'react-toastify';
 import authService from '../services/authService';
-const RegisterPage = () => {
+import { jwtDecode } from "jwt-decode";
+export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      const token = localStorage.getItem("accessToken");
+      // không có token
+      if (!token) {
+        setIsLogin(false);
+        return;
+      }
+
+      try {
+        // decode token
+        const decoded = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+
+        // token hết hạn
+        // @ts-ignore
+        if (decoded.exp < currentTime) {
+          toast.warn("Token đã hết hạn");
+          localStorage.removeItem("accessToken");
+          setIsLogin(false);
+          return;
+        }
+
+        // verify token với backend
+        const response = await authService.getMe();
+        console.log(response.data);
+
+        // hợp lệ
+        setIsLogin(true);
+        navigate("/quizpage");
+      } catch (err) {
+        console.log(err.response?.status);
+        setIsLogin(false);
+      }
+    };
+
+    checkLogin();
+  }, [navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -176,4 +219,3 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
