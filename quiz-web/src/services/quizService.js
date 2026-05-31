@@ -13,6 +13,10 @@ const quizService = {
             }
         });
         return response.data;
+    },
+    delete: async (id) => {
+        const response = await axiosClient.delete(`quizzes/${id}`);
+        return response.data;
     }
 };
 

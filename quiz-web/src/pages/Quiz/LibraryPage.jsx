@@ -29,36 +29,36 @@ const LibraryPage = () => {
 
     const defaultQuizImage = "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=500&auto=format&fit=crop&q=60";
 
+    // Hàm gọi API load danh sách (Tách riêng ra ngoài để tái sử dụng khi xóa thành công)
+    const loadQuizzes = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const response = await quizService.quizzes(currentPage, PAGE_LIMIT, searchQuery);
+            const data = response?.data ? response.data : response;
+            
+            setQuizzes(data?.items || []);
+            setTotalPages(data?.totalPages || 1);
+
+        } catch (err) {
+            console.error("Lỗi khi tải danh sách bài Quiz:", err);
+            setError("Không thể tải danh sách bài trắc nghiệm. Vui lòng kiểm tra lại kết nối!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery]);
 
     useEffect(() => {
-        const loadQuizzes = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                
-                const response = await quizService.quizzes(currentPage, PAGE_LIMIT, searchQuery);
-                const data = response?.data ? response.data : response;
-                
-                setQuizzes(data?.items || []);
-                setTotalPages(data?.totalPages || 1);
-
-            } catch (err) {
-                console.error("Lỗi khi tải danh sách bài Quiz:", err);
-                setError("Không thể tải danh sách bài trắc nghiệm. Vui lòng kiểm tra lại kết nối!");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         loadQuizzes();
     }, [currentPage, searchQuery]);
 
     // --- LOGIC XỬ LÝ SẮP XẾP SỬ DỤNG USEMEMO ---
     const sortedQuizzes = useMemo(() => {
-        // Tạo một mảng mới để tránh mutate state trực tiếp của React
         const quizzesCopy = [...quizzes];
         
         if (sortBy === 'az') {
@@ -68,9 +68,38 @@ const LibraryPage = () => {
             return quizzesCopy.sort((a, b) => b.title.localeCompare(a.title, 'vi', { sensitivity: 'base' }));
         }
         
-        // Mặc định trả về từ backend (Gần đây nhất)
         return quizzesCopy;
     }, [quizzes, sortBy]);
+
+    // --- LOGIC HÀM XỬ LÝ XÓA QUIZ ---
+    const handleDeleteQuiz = async (id, title) => {
+        setOpenMenuId(null); // Đóng menu popover ngay lập tức
+
+        const isConfirmed = window.confirm(`Bạn có chắc chắn muốn xóa bài trắc nghiệm "${title}" không? Hành động này không thể hoàn tác.`);
+        if (!isConfirmed) return;
+
+        try {
+            setLoading(true);
+            // Gọi hàm delete từ service đã viết
+            await quizService.delete(id);
+            
+            // Thông báo xóa thành công (Có thể thay thế bằng toast message nếu dự án có)
+            alert("Xóa bài trắc nghiệm thành công!");
+
+            // Xử lý edge-case: Nếu xóa phần tử duy nhất còn lại ở trang cuối, lùi về trang trước đó
+            if (quizzes.length === 1 && currentPage > 1) {
+                setCurrentPage(prev => prev - 1);
+            } else {
+                // Ngược lại, chỉ cần reload dữ liệu tại trang hiện tại
+                loadQuizzes();
+            }
+
+        } catch (err) {
+            console.error("Lỗi khi xóa bài Quiz:", err);
+            alert("Không thể xóa bài trắc nghiệm. Vui lòng thử lại sau!");
+            setLoading(false);
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return "Không rõ thời gian";
@@ -176,7 +205,7 @@ const LibraryPage = () => {
                     </div>
                 </div>
 
-                {/* THÀNH PHẦN 2: GRID LƯỚI DANH SÁCH BÀI QUIZ (Thay đổi sử dụng sortedQuizzes thay vì quizzes ban đầu) */}
+                {/* THÀNH PHẦN 2: GRID LƯỚI DANH SÁCH BÀI QUIZ */}
                 {sortedQuizzes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center pt-20">
                         <p className="text-gray-400 font-medium text-sm">
@@ -218,8 +247,10 @@ const LibraryPage = () => {
                                                     >
                                                         <FaEdit className="text-blue-500" /> Chỉnh sửa
                                                     </button>
+                                                    
+                                                    {/* THAY THẾ NÚT XÓA: ĂN THEO HÀM HANDLE_DELETE_QUIZ MỚI */}
                                                     <button 
-                                                        onClick={() => { alert(`Xóa quiz id: ${quiz.quizId}`); setOpenMenuId(null); }}
+                                                        onClick={() => handleDeleteQuiz(quiz.quizId, quiz.title)}
                                                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-all border-t border-gray-100"
                                                     >
                                                         <FaTrashAlt className="text-red-500" /> Xóa
