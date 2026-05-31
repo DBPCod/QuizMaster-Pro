@@ -1,134 +1,78 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Thêm hooks để đọc Params và Điều hướng Route
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
     FaPuzzlePiece, FaListUl, FaTrashAlt, FaCopy, FaPlus, 
     FaFileUpload, FaInfoCircle, FaSignOutAlt, FaEye, FaSave,
     FaHeading, FaCheck, FaChevronDown, FaCheckSquare, FaSpinner
 } from 'react-icons/fa';
+import quizService from '../services/quizService'; 
 
-// ============================================================================
-// MOCK DATABASE & API TÍCH HỢP TRONG FILE CHUYÊN BIỆT CHO LUỒNG EDIT
-// ============================================================================
-const mockQuizDatabase = {
-  1: {
-    id: 1,
-    title: "Lịch sử cuộc Khởi nghĩa Lam Sơn",
-    questions: [
-      {
-        id: 101,
-        text: "Cuộc khởi nghĩa Lam Sơn do ai lãnh đạo?",
-        type: "single", // 'single' hoặc 'multiple'
-        options: {
-          A: "Lê Lợi",
-          B: "Nguyễn Trãi",
-          C: "Trần Hưng Đạo",
-          D: "Nguyễn Huệ"
-        },
-        correctAnswers: { A: true, B: false, C: false, D: false }
-      },
-      {
-        id: 102,
-        text: "Nguyễn Trãi dâng Bình Ngô sách ở đâu?",
-        type: "single",
-        options: {
-          A: "Đông Quan",
-          B: "Lỗi Giang",
-          C: "Hội Thề Lũng Nhai",
-          D: "Căn cứ Lam Sơn"
-        },
-        correctAnswers: { A: false, B: true, C: false, D: false }
-      }
-    ]
-  },
-  2: {
-    id: 2,
-    title: "Kiến trúc máy tính & Hệ điều hành",
-    questions: [
-      {
-        id: 201,
-        text: "Thành phần nào sau đây được coi là brain bộ của máy tính?",
-        type: "single",
-        options: { A: "RAM", B: "CPU", C: "Hard Disk", D: "GPU" },
-        correctAnswers: { A: false, B: true, C: false, D: false }
-      }
-    ]
-  },
-  3: {
-    id: 3,
-    title: "Lập trình Web nâng cao với React",
-    questions: [
-      {
-        id: 301,
-        text: "Các React Hook nào sau đây được sử dụng để tối ưu hiệu năng? (Chọn nhiều đáp án)",
-        type: "multiple",
-        options: { A: "useState", B: "useMemo", C: "useCallback", D: "useEffect" },
-        correctAnswers: { A: false, B: true, C: true, D: false }
-      }
-    ]
-  }
-};
-
-// Giả lập lệnh gọi API tải chi tiết bài Quiz bằng Promise và Delay
-const fetchQuizDataFromApi = (id) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const quiz = mockQuizDatabase[id];
-      if (quiz) {
-        resolve(JSON.parse(JSON.stringify(quiz)));
-      } else {
-        resolve({
-          id: id,
-          title: "Bài Quiz mới chưa đặt tên",
-          questions: [
-            {
-              id: Date.now(),
-              text: "Nội dung câu hỏi mẫu?",
-              type: "single",
-              options: { A: "", B: "", C: "", D: "" },
-              correctAnswers: { A: true, B: false, C: false, D: false }
-            }
-          ]
-        });
-      }
-    }, 450);
-  });
-};
-
-// ============================================================================
-// MAIN WORKSPACE LAYOUT (TƯƠNG ĐỒNG VỚI CREATEQUIZ VỀ PHONG CÁCH HIỂN THỊ)
-// ============================================================================
 const EditQuizLayout = () => {
-    const { quizId } = useParams(); // Đọc tự động mã quizId từ thanh địa chỉ URL
-    const navigate = useNavigate(); // Khởi tạo lệnh điều hướng trang
+    const { quizId } = useParams(); 
+    const navigate = useNavigate(); 
 
     const [loading, setLoading] = useState(true);
     const [quizTitle, setQuizTitle] = useState("");
+    const [quizDescription, setQuizDescription] = useState(""); 
     const [questions, setQuestions] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-    // Trạng thái điều khiển đóng mở Custom Combobox loại câu hỏi
     const [isOpenCombobox, setIsOpenCombobox] = useState(false);
     const comboboxRef = useRef(null);
-    
-    // Khởi tạo Ref điều khiển thẻ input file ẩn phục vụ luồng Nhập từ file
     const fileInputRef = useRef(null);
 
-    // Chạy ngầm hàm lấy dữ liệu từ API dựa theo quizId nhận diện từ URL
+    // ============================================================================
+    // LUỒNG TẢI DỮ LIỆU THỰC TẾ & MAPPING TỪ JSON BACKEND SANG FRONTEND STATE
+    // ============================================================================
     useEffect(() => {
-        let isMounted = true;
-        setLoading(true);
-        
-        fetchQuizDataFromApi(Number(quizId)).then((data) => {
-            if (isMounted) {
-                setQuizTitle(data.title);
-                setQuestions(data.questions);
-                setCurrentQuestionIndex(0);
+        const loadQuizDetail = async () => {
+            try {
+                setLoading(true);
+                const response = await quizService.getById(quizId);
+                const rawData = response?.data ? response.data : response;
+
+                if (rawData) {
+                    setQuizTitle(rawData.title || "");
+                    setQuizDescription(rawData.description || "");
+                    
+                    // Convert cấu trúc Backend (Mảng answers) sang cấu trúc State Dễ Dùng ở Frontend (A, B, C, D)
+                    const mappedQuestions = (rawData.questions || []).map((q) => {
+                        const frontendOptions = { A: "", B: "", C: "", D: "" };
+                        const frontendCorrect = { A: false, B: false, C: false, D: false };
+                        
+                        const labels = ['A', 'B', 'C', 'D'];
+                        (q.answers || []).forEach((ans, idx) => {
+                            if (idx < 4) {
+                                const currentLabel = labels[idx];
+                                frontendOptions[currentLabel] = ans.content || "";
+                                frontendCorrect[currentLabel] = ans.isCorrect || false;
+                            }
+                        });
+
+                        return {
+                            id: q.questionId || Date.now() + Math.random(),
+                            text: q.content || "",
+                            type: q.type === 1 ? "multiple" : "single", // 0: single, 1: multiple
+                            options: frontendOptions,
+                            correctAnswers: frontendCorrect
+                        };
+                    });
+
+                    setQuestions(mappedQuestions);
+                }
+            } catch (err) {
+                console.error("Lỗi lấy chi tiết Quiz:", err);
+                alert("Không thể tải thông tin bài trắc nghiệm này từ Server!");
+                navigate('/quizpage/library');
+            } finally {
                 setLoading(false);
             }
-        });
+        };
 
-        return () => { isMounted = false; };
-    }, [quizId]);
+        if (quizId) {
+            loadQuizDetail();
+        }
+    }, [quizId, navigate]);
 
     // Click bên ngoài vùng chọn để ẩn Dropdown Combobox
     useEffect(() => {
@@ -146,7 +90,6 @@ const EditQuizLayout = () => {
     // ============================================================================
     // LOGIC CHỈNH SỬA DỮ LIỆU ĐỘNG (REALTIME BINDING)
     // ============================================================================
-    
     const handleQuestionTextChange = (value) => {
         const updated = [...questions];
         updated[currentQuestionIndex].text = value;
@@ -165,10 +108,7 @@ const EditQuizLayout = () => {
 
         if (currentQ.type === 'single') {
             currentQ.correctAnswers = {
-                A: label === 'A',
-                B: label === 'B',
-                C: label === 'C',
-                D: label === 'D'
+                A: label === 'A', B: label === 'B', C: label === 'C', D: label === 'D'
             };
         } else {
             currentQ.correctAnswers[label] = !currentQ.correctAnswers[label];
@@ -199,7 +139,7 @@ const EditQuizLayout = () => {
 
     const handleAddQuestion = () => {
         const newQ = {
-            id: Date.now(),
+            id: Date.now(), 
             text: "",
             type: "single",
             options: { A: "", B: "", C: "", D: "" },
@@ -238,14 +178,10 @@ const EditQuizLayout = () => {
         }
     };
 
-    // Luồng kích hoạt chọn file ẩn khi người dùng click vào nút "Nhập từ file"
     const triggerFileSelect = () => {
-        if (fileInputRef.current) {
-            fileInputRef.current.click();
-        }
+        if (fileInputRef.current) fileInputRef.current.click();
     };
 
-    // Hàm xử lý phân tích cú pháp dữ liệu file được đẩy lên (JSON hoặc chuỗi cấu trúc thô)
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -264,14 +200,9 @@ const EditQuizLayout = () => {
                     if (lines.length > 0) {
                         importedQuestions = [{
                             id: Date.now(),
-                            text: lines[0] || "Câu hỏi được nhập từ file text...",
+                            text: lines[0] || "Câu hỏi mới...",
                             type: "single",
-                            options: {
-                                A: lines[1] || "Đáp án A",
-                                B: lines[2] || "Đáp án B",
-                                C: lines[3] || "Đáp án C",
-                                D: lines[4] || "Đáp án D"
-                            },
+                            options: { A: lines[1] || "", B: lines[2] || "", C: lines[3] || "", D: lines[4] || "" },
                             correctAnswers: { A: true, B: false, C: false, D: false }
                         }];
                     }
@@ -288,50 +219,73 @@ const EditQuizLayout = () => {
 
                     setQuestions([...questions, ...normalized]);
                     setCurrentQuestionIndex(questions.length);
-                    alert(`Đã nhập thành công ${normalized.length} câu hỏi vào bài viết!`);
-                } else {
-                    alert("Không tìm thấy cấu trúc câu hỏi hợp lệ trong file!");
+                    alert(`Đã nhập thành công ${normalized.length} câu hỏi!`);
                 }
             } catch (err) {
-                alert("Lỗi đọc cấu trúc file, vui lòng kiểm tra lại định dạng dữ liệu!");
-                console.error(err);
+                alert("Lỗi định dạng file!");
             }
             event.target.value = null;
         };
         reader.readAsText(file);
     };
 
-    const handleSaveQuiz = () => {
+    // ============================================================================
+    // CHỨC NĂNG CẬP NHẬT (LƯU) QUIZ - MAPPING QUAY LẠI ĐÚNG ĐỊNH DẠNG JSON BACKEND
+    // ============================================================================
+    const handleSaveQuiz = async () => {
+        if (!quizTitle.trim()) {
+            alert("Vui lòng nhập tên tiêu đề bài Quiz!");
+            return;
+        }
+
+        // Tạo payload đúng y hệt cấu trúc JSON yêu cầu từ Backend của bạn
         const updatedPayload = {
-            id: quizId,
             title: quizTitle,
-            questions: questions
+            description: quizDescription || "Bài trắc nghiệm được cập nhật từ hệ thống",
+            questions: questions.map((q, qIdx) => ({
+                content: q.text,
+                type: q.type === "multiple" ? 1 : 0, // Convert ngược lại: single -> 0, multiple -> 1
+                score: 10,
+                answers: ['A', 'B', 'C', 'D'].map((label, ansIdx) => ({
+                    content: q.options[label],
+                    isCorrect: q.correctAnswers[label],
+                    orderIndex: ansIdx + 1
+                }))
+            }))
         };
-        console.log(">>> DỮ LIỆU ĐÃ SỬA GỬI LÊN SERVER:", updatedPayload);
-        alert(`Đã cập nhật thành công bài viết: "${quizTitle}"!`);
-        navigate('/library'); 
+
+        try {
+            setLoading(true);
+            const response = await quizService.update(quizId, updatedPayload);
+            
+            // Chấp nhận cả 2 trường hợp response bọc data hoặc trực tiếp tùy cấu trúc axios của bạn
+            if (response && (response.success || response.statusCode === 200)) {
+                alert(`🎉 Cập nhật thành công bài viết: "${quizTitle}"!`);
+                navigate('/quizpage/library'); 
+            } else {
+                alert("Cập nhật thất bại: " + (response.message || "Lỗi hệ thống."));
+            }
+        } catch (error) {
+            console.error("Lỗi cập nhật API:", error);
+            const serverError = error.response?.data?.message || "Đã xảy ra lỗi kết nối với Backend.";
+            alert("Lỗi hệ thống: " + serverError);
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (loading) {
         return (
             <div className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center bg-gray-50 z-50">
                 <FaSpinner className="animate-spin text-blue-600 text-4xl mb-3" />
-                <p className="text-gray-500 font-medium text-sm">Đang tải cấu trúc dữ liệu chỉnh sửa bài Quiz...</p>
+                <p className="text-gray-500 font-medium text-sm">Đang đồng bộ dữ liệu với Server...</p>
             </div>
         );
     }
 
     return (
         <div className="fixed inset-0 w-screen h-screen bg-gray-50 flex flex-col overflow-hidden z-50 font-sans">
-            
-            {/* Thẻ input file ẩn phục vụ tính năng nhập từ file */}
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept=".txt,.json" 
-                className="hidden" 
-            />
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".txt,.json" className="hidden" />
 
             {/* ================= THANH CÔNG CỤ TRÊN CÙNG TRANG LÀM VIỆC ================= */}
             <div className="w-full h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between gap-4 shrink-0 shadow-sm z-10">
@@ -351,29 +305,27 @@ const EditQuizLayout = () => {
                         value={quizTitle}
                         onChange={(e) => setQuizTitle(e.target.value)}
                         placeholder="Nhập tên tiêu đề bài Quiz tại đây..." 
-                        className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:font-normal placeholder:text-gray-400"
+                        className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-800 focus:outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm"
                     />
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    <button className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-all">
-                        <FaEye className="text-xs" /> <span>Xem trước</span>
-                    </button>
                     
-                    <button 
-                        onClick={handleSaveQuiz}
-                        className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-sm shadow-blue-100 transition-all"
-                    >
+                    <button onClick={handleSaveQuiz} className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-sm transition-all">
                         <FaSave className="text-xs" /> <span>Lưu thay đổi</span>
                     </button>
 
                     <div className="h-5 w-[1px] bg-gray-200 mx-1"></div>
 
                     <button 
-                        onClick={() => navigate('/library')}
+                        onClick={() => {
+                            if(window.confirm("Bạn muốn đóng không gian chỉnh sửa? Tiến trình chưa lưu sẽ bị mất.")) {
+                                navigate('/quizpage/library');
+                            }
+                        }}
                         className="flex items-center gap-1.5 bg-white text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-50 transition-all"
                     >
-                        <FaSignOutAlt className="text-xs" /> <span>Đóng</span>
+                        <FaSignOutAlt className="text-xs" /> <span>Thoát</span>
                     </button>
                 </div>
             </div>
@@ -381,7 +333,7 @@ const EditQuizLayout = () => {
             {/* ================= KHU VỰC THÂN MÁY LÀM VIỆC CHÍNH ================= */}
             <div className="flex-grow flex w-full overflow-hidden h-[calc(100vh-64px)]">
                 
-                {/* BÊN TRÁI: PANEL LIÊN KẾT DANH SÁCH CÂU HỎI */}
+                {/* BÊN TRÁI: PANEL DANH SÁCH CÂU HỎI */}
                 <div className="w-80 bg-white border-r border-gray-200 p-4 flex flex-col justify-between shrink-0 h-full">
                     <div className="flex flex-col flex-grow overflow-y-auto pr-1">
                         <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3 shrink-0">
@@ -417,24 +369,17 @@ const EditQuizLayout = () => {
                         </div>
                     </div>
 
-                    {/* ĐÃ ĐỒNG BỘ: Cụm nút Thêm câu hỏi và Nhập từ file xếp chồng dạng dọc chuẩn xác theo Create Layout */}
                     <div className="pt-3 border-t border-gray-100 space-y-2 shrink-0">
-                        <button 
-                            onClick={handleAddQuestion}
-                            className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-blue-700 transition-all shadow-sm"
-                        >
+                        <button onClick={handleAddQuestion} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-blue-700 transition-all shadow-sm">
                             <FaPlus /> Thêm câu hỏi
                         </button>
-                        <button 
-                            onClick={triggerFileSelect}
-                            className="w-full flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 py-2 rounded-lg text-xs font-semibold hover:bg-gray-50 transition-all"
-                        >
+                        <button onClick={triggerFileSelect} className="w-full flex items-center justify-center gap-2 bg-white text-gray-600 border border-gray-200 py-2 rounded-lg text-xs font-semibold hover:bg-gray-50 transition-all">
                             <FaFileUpload /> Nhập từ file
                         </button>
                     </div>
                 </div>
 
-                {/* BÊN PHẢI: KHÔNG GIAN SOẠN THẢO CHI TIẾT CÂU HỎI ĐANG CHỌN */}
+                {/* BÊN PHẢI: KHÔNG GIAN SOẠN THẢO CHI TIẾT */}
                 <div className="flex-1 bg-white border border-gray-200 rounded-xl p-5 shadow-sm overflow-y-auto m-4">
                     {currentQuestion && (
                         <div className="w-full h-fit">
@@ -443,7 +388,6 @@ const EditQuizLayout = () => {
                                 <span>Thông tin chi tiết câu hỏi {currentQuestionIndex + 1}</span>
                             </div>
 
-                            {/* Văn bản nhập liệu và Khối Combobox lọc cấu trúc */}
                             <div className="flex flex-col sm:flex-row gap-4 mb-6">
                                 <div className="flex-grow">
                                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5 tracking-wider text-left">Nội dung câu hỏi</label>
@@ -456,14 +400,12 @@ const EditQuizLayout = () => {
                                     />
                                 </div>
                                 
-                                {/* Khối Custom Combobox cấu trúc phương án lựa chọn */}
                                 <div className="sm:w-60 shrink-0 relative" ref={comboboxRef}>
                                     <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5 tracking-wider text-left">Loại lựa chọn</label>
-                                    
                                     <button 
                                         type="button"
                                         onClick={() => setIsOpenCombobox(!isOpenCombobox)}
-                                        className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-600 flex items-center justify-between transition-all hover:bg-blue-100/70 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+                                        className="w-full px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm font-bold text-blue-600 flex items-center justify-between transition-all hover:bg-blue-100/70"
                                     >
                                         <div className="flex items-center gap-2">
                                             {currentQuestion.type === 'single' ? <FaListUl className="text-xs" /> : <FaCheckSquare className="text-xs" />}
@@ -473,17 +415,14 @@ const EditQuizLayout = () => {
                                     </button>
 
                                     {isOpenCombobox && (
-                                        <div className="absolute left-0 mt-1.5 w-full bg-white border border-gray-100 rounded-xl shadow-xl z-20 py-1 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                                        <div className="absolute left-0 mt-1.5 w-full bg-white border border-gray-100 rounded-xl shadow-xl z-20 py-1 overflow-hidden">
                                             <button
                                                 type="button"
                                                 onClick={() => handleTypeChange('single')}
                                                 className={`w-full px-4 py-2.5 text-sm font-semibold flex items-center justify-between transition-colors text-left
                                                     ${currentQuestion.type === 'single' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}
                                             >
-                                                <div className="flex items-center gap-2">
-                                                    <FaListUl className="text-xs opacity-70" />
-                                                    <span>Một lựa chọn</span>
-                                                </div>
+                                                <div className="flex items-center gap-2"><FaListUl className="text-xs opacity-70" /> <span>Một lựa chọn</span></div>
                                                 {currentQuestion.type === 'single' && <FaCheck className="text-xs" />}
                                             </button>
 
@@ -493,10 +432,7 @@ const EditQuizLayout = () => {
                                                 className={`w-full px-4 py-2.5 text-sm font-semibold flex items-center justify-between transition-colors text-left
                                                     ${currentQuestion.type === 'multiple' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}
                                             >
-                                                <div className="flex items-center gap-2">
-                                                    <FaCheckSquare className="text-xs opacity-70" />
-                                                    <span>Nhiều lựa chọn</span>
-                                                </div>
+                                                <div className="flex items-center gap-2"><FaCheckSquare className="text-xs opacity-70" /> <span>Nhiều lựa chọn</span></div>
                                                 {currentQuestion.type === 'multiple' && <FaCheck className="text-xs" />}
                                             </button>
                                         </div>
@@ -504,7 +440,6 @@ const EditQuizLayout = () => {
                                 </div>
                             </div>
 
-                            {/* Khu vực cấu hình đáp án */}
                             <label className="block text-xs font-bold text-gray-400 uppercase mb-3 tracking-wider text-left">Các tùy chọn đáp án</label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {['A', 'B', 'C', 'D'].map((label) => {
@@ -513,30 +448,15 @@ const EditQuizLayout = () => {
                                         <div 
                                             key={label} 
                                             className={`flex items-center gap-3 p-3.5 border rounded-xl transition-all duration-200
-                                                ${isCorrect 
-                                                    ? 'border-green-500 bg-green-50/20 shadow-sm' 
-                                                    : 'border-gray-200 bg-gray-50/50 focus-within:border-blue-400 focus-within:bg-white'}`}
+                                                ${isCorrect ? 'border-green-500 bg-green-50/20 shadow-sm' : 'border-gray-200 bg-gray-50/50 focus-within:border-blue-400 focus-within:bg-white'}`}
                                         >
                                             <label className="relative flex items-center justify-center cursor-pointer shrink-0">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={isCorrect}
-                                                    onChange={() => handleSelectCorrect(label)}
-                                                    className="sr-only" 
-                                                />
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all
-                                                    ${isCorrect 
-                                                        ? 'border-green-500 bg-green-500 text-white' 
-                                                        : 'border-gray-300 bg-white hover:border-gray-400'}`}
-                                                >
+                                                <input type="checkbox" checked={isCorrect} onChange={() => handleSelectCorrect(label)} className="sr-only" />
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300 bg-white'}`}>
                                                     {isCorrect && <FaCheck className="text-[10px]" />}
                                                 </div>
                                             </label>
-
-                                            <span className={`text-sm font-bold ${isCorrect ? 'text-green-600' : 'text-gray-400'}`}>
-                                                {label}.
-                                            </span>
-                                            
+                                            <span className={`text-sm font-bold ${isCorrect ? 'text-green-600' : 'text-gray-400'}`}>{label}.</span>
                                             <input 
                                                 type="text" 
                                                 value={currentQuestion.options[label] || ''}
