@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // Thêm sử dụng useSearchParams
+import React, { useState, useEffect, useMemo } from 'react'; // Thêm useMemo
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   FaSortAmountDown, FaEllipsisH, FaEdit, FaTrashAlt, 
   FaRegClock, FaListOl, FaSpinner, FaExclamationCircle,
-  FaChevronLeft, FaChevronRight 
+  FaChevronLeft, FaChevronRight,
+  FaSortAlphaDown, FaSortAlphaUp // Thêm icon cho A-Z và Z-A
 } from 'react-icons/fa';
 import quizService from '../../services/quizService'; 
 
@@ -11,13 +12,15 @@ const LibraryPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     
-    // Lấy từ khóa search trực tiếp từ thanh URL trình duyệt
     const searchQuery = searchParams.get('search') || '';
 
     const [openMenuId, setOpenMenuId] = useState(null);
     const [quizzes, setQuizzes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Thêm state quản lý kiểu sắp xếp: 'recent' (mặc định), 'az', 'za'
+    const [sortBy, setSortBy] = useState('recent');
 
     // Quản lý phân trang
     const [currentPage, setCurrentPage] = useState(1);
@@ -26,36 +29,77 @@ const LibraryPage = () => {
 
     const defaultQuizImage = "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=500&auto=format&fit=crop&q=60";
 
-    // Khi từ khóa tìm kiếm trên URL thay đổi, lập tức đưa trang hiện tại về trang 1
+    // Hàm gọi API load danh sách (Tách riêng ra ngoài để tái sử dụng khi xóa thành công)
+    const loadQuizzes = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const response = await quizService.quizzes(currentPage, PAGE_LIMIT, searchQuery);
+            const data = response?.data ? response.data : response;
+            
+            setQuizzes(data?.items || []);
+            setTotalPages(data?.totalPages || 1);
+
+        } catch (err) {
+            console.error("Lỗi khi tải danh sách bài Quiz:", err);
+            setError("Không thể tải danh sách bài trắc nghiệm. Vui lòng kiểm tra lại kết nối!");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery]);
 
-    // --- THEO DÕI SÁT SAO CẢ CURRENT_PAGE VÀ SEARCH_QUERY ---
     useEffect(() => {
-        const loadQuizzes = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                
-                // Gửi kèm tham số searchQuery lên Backend Service
-                const response = await quizService.quizzes(currentPage, PAGE_LIMIT, searchQuery);
-                
-                const data = response?.data ? response.data : response;
-                
-                setQuizzes(data?.items || []);
-                setTotalPages(data?.totalPages || 1);
-
-            } catch (err) {
-                console.error("Lỗi khi tải danh sách bài Quiz:", err);
-                setError("Không thể tải danh sách bài trắc nghiệm. Vui lòng kiểm tra lại kết nối!");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         loadQuizzes();
-    }, [currentPage, searchQuery]); // Tự động trigger lại hàm khi đổi trang hoặc thay đổi chuỗi tìm kiếm
+    }, [currentPage, searchQuery]);
+
+    // --- LOGIC XỬ LÝ SẮP XẾP SỬ DỤNG USEMEMO ---
+    const sortedQuizzes = useMemo(() => {
+        const quizzesCopy = [...quizzes];
+        
+        if (sortBy === 'az') {
+            return quizzesCopy.sort((a, b) => a.title.localeCompare(b.title, 'vi', { sensitivity: 'base' }));
+        }
+        if (sortBy === 'za') {
+            return quizzesCopy.sort((a, b) => b.title.localeCompare(a.title, 'vi', { sensitivity: 'base' }));
+        }
+        
+        return quizzesCopy;
+    }, [quizzes, sortBy]);
+
+    // --- LOGIC HÀM XỬ LÝ XÓA QUIZ ---
+    const handleDeleteQuiz = async (id, title) => {
+        setOpenMenuId(null); // Đóng menu popover ngay lập tức
+
+        const isConfirmed = window.confirm(`Bạn có chắc chắn muốn xóa bài trắc nghiệm "${title}" không? Hành động này không thể hoàn tác.`);
+        if (!isConfirmed) return;
+
+        try {
+            setLoading(true);
+            // Gọi hàm delete từ service đã viết
+            await quizService.delete(id);
+            
+            // Thông báo xóa thành công (Có thể thay thế bằng toast message nếu dự án có)
+            alert("Xóa bài trắc nghiệm thành công!");
+
+            // Xử lý edge-case: Nếu xóa phần tử duy nhất còn lại ở trang cuối, lùi về trang trước đó
+            if (quizzes.length === 1 && currentPage > 1) {
+                setCurrentPage(prev => prev - 1);
+            } else {
+                // Ngược lại, chỉ cần reload dữ liệu tại trang hiện tại
+                loadQuizzes();
+            }
+
+        } catch (err) {
+            console.error("Lỗi khi xóa bài Quiz:", err);
+            alert("Không thể xóa bài trắc nghiệm. Vui lòng thử lại sau!");
+            setLoading(false);
+        }
+    };
 
     const formatDate = (dateString) => {
         if (!dateString) return "Không rõ thời gian";
@@ -124,15 +168,45 @@ const LibraryPage = () => {
                         )}
                     </div>
                     
+                    {/* KHU VỰC CÁC NÚT LỌC SẮP XẾP */}
                     <div className="flex flex-wrap gap-2">
-                        <button className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 transition-all">
+                        <button 
+                            onClick={() => setSortBy('recent')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                sortBy === 'recent' 
+                                ? 'bg-blue-600 text-white shadow-sm' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
                             <FaSortAmountDown /> Gần đây nhất
+                        </button>
+                        
+                        <button 
+                            onClick={() => setSortBy('az')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                sortBy === 'az' 
+                                ? 'bg-blue-600 text-white shadow-sm' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <FaSortAlphaDown /> Từ A - Z
+                        </button>
+
+                        <button 
+                            onClick={() => setSortBy('za')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                sortBy === 'za' 
+                                ? 'bg-blue-600 text-white shadow-sm' 
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <FaSortAlphaUp /> Từ Z - A
                         </button>
                     </div>
                 </div>
 
                 {/* THÀNH PHẦN 2: GRID LƯỚI DANH SÁCH BÀI QUIZ */}
-                {quizzes.length === 0 ? (
+                {sortedQuizzes.length === 0 ? (
                     <div className="flex flex-col items-center justify-center pt-20">
                         <p className="text-gray-400 font-medium text-sm">
                             {searchQuery ? "Không tìm thấy bài trắc nghiệm nào phù hợp từ khóa." : "Thư viện hiện tại đang rỗng. Hãy tạo bài Quiz mới!"}
@@ -140,7 +214,7 @@ const LibraryPage = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-                        {quizzes.map((quiz) => (
+                        {sortedQuizzes.map((quiz) => (
                             <div key={quiz.quizId} className="bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col">
                                 <div className="h-40 w-full overflow-hidden bg-gray-200 relative">
                                     <img src={defaultQuizImage} alt={quiz.title} className="w-full h-full object-cover" />
@@ -173,8 +247,10 @@ const LibraryPage = () => {
                                                     >
                                                         <FaEdit className="text-blue-500" /> Chỉnh sửa
                                                     </button>
+                                                    
+                                                    {/* THAY THẾ NÚT XÓA: ĂN THEO HÀM HANDLE_DELETE_QUIZ MỚI */}
                                                     <button 
-                                                        onClick={() => { alert(`Xóa quiz id: ${quiz.quizId}`); setOpenMenuId(null); }}
+                                                        onClick={() => handleDeleteQuiz(quiz.quizId, quiz.title)}
                                                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-all border-t border-gray-100"
                                                     >
                                                         <FaTrashAlt className="text-red-500" /> Xóa
@@ -202,7 +278,7 @@ const LibraryPage = () => {
             </div>
 
             {/* THÀNH PHẦN 3: THANH PHÂN TRANG */}
-            {quizzes.length > 0 && totalPages > 1 && (
+            {sortedQuizzes.length > 0 && totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-12 pt-6 border-t border-gray-200">
                     <button
                         onClick={() => handlePageChange(currentPage - 1)}

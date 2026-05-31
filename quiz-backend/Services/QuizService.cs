@@ -267,7 +267,7 @@ public class QuizService : IQuizService
         pageSize = Math.Min(pageSize, 50);
 
         // 2. Khởi tạo Query gốc
-        var query = _context.Quizzes.AsNoTracking();
+        var query = _context.Quizzes.AsNoTracking().Where(q => !q.IsDeleted);
 
         // 3. Thực hiện lọc dữ liệu (Server-Side Search) nếu có từ khóa tìm kiếm
         if (!string.IsNullOrWhiteSpace(search))
@@ -295,7 +295,8 @@ public class QuizService : IQuizService
                 Title = q.Title,
                 Description = q.Description,
                 TotalQuestions = q.Questions.Count,
-                CreatedAt = q.CreatedAt
+                CreatedAt = q.CreatedAt,
+                IsDeleted = q.IsDeleted
             })
             .ToListAsync();
 
